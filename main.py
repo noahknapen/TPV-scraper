@@ -1,6 +1,7 @@
 import argparse
 import requests
 from bs4 import BeautifulSoup
+import re
 
 def get_page(url):
     try:
@@ -15,6 +16,13 @@ def get_page(url):
 
     return text
 
+def remove_irrelevant_characters(parsed_html):
+    # Keywords: <hh:mm>, padel <1|2>, <vrij|bezet>
+    # Remove all other characters
+
+    filtered_html = re.findall(r"[0-9]{2}:[0-9]{2}|padel [12]|vrij|bezet", parsed_html)
+    return filtered_html
+
 def main():
     parser = argparse.ArgumentParser(description="Parse the HTML code of the supplied URL")
     parser.add_argument("-u", "--url", required=True, help="The URL to retrieve")
@@ -22,7 +30,10 @@ def main():
 
     url = args.url
 
-    print(get_page(url))
+    parsed_html = get_page(url)
+    filtered_html = remove_irrelevant_characters(parsed_html)
+    print(filtered_html)
+
 
 if __name__ == "__main__":
     main()
