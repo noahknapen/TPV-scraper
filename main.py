@@ -32,24 +32,32 @@ def get_page(url):
 
     return text
 
-def remove_irrelevant_characters(tennis, parsed_html):
+def remove_irrelevant_characters(type, parsed_html):
     # Keywords: <hh:mm>, padel <1|2>, <vrij|bezet>
     # Remove all other characters
 
-    if tennis:
-        return re.findall(r"[0-9]{2}:[0-9]{2}|terrein [0-9]{1,}|vrij|bezet|verhuurd", parsed_html)
+    if type == "t_indoor" or type == "t_outdoor":
+        filtered_html = re.findall(r"[0-9]{2}:[0-9]{2}|terrein [0-9]{1,}|vrij|bezet|verhuurd", parsed_html)
     else:
-        return re.findall(r"[0-9]{2}:[0-9]{2}|padel [0-9]{1,}|vrij|bezet|verhuurd", parsed_html)
+        filtered_html = re.findall(r"[0-9]{2}:[0-9]{2}|padel [0-9]{1,}|vrij|bezet|verhuurd", parsed_html)
+    
+    if re.findall(r"terrein [0-9]{1,}|padel [0-9]{1,}", str(filtered_html)) == []:
+        return ""
+    else:
+        return filtered_html
 
 def get_occupied_hours(filtered_html):
     # TODO: add out-of-range checks
 
     hour = None
+    fields = []
     occupied_hours = {}
 
     for index in range(0, len(filtered_html)):
         if re.fullmatch(r'[0-9]{2}:[0-9]{2}', filtered_html[index]):
             hour = filtered_html[index]
+        if re.fullmatch(r"terrein [0-9]{1,}|padel [0-9]{1,}", filtered_html[index]):
+            fields.append(filtered_html[index])
         if filtered_html[index] == 'bezet' or filtered_html[index] == 'verhuurd':
             field = filtered_html[index-1]
 
@@ -57,6 +65,10 @@ def get_occupied_hours(filtered_html):
                 occupied_hours[field].append(hour)
             else:
                 occupied_hours[field] = [hour]
+    
+    for field in fields:
+        if field not in occupied_hours:
+            occupied_hours[field] = []
         
     return occupied_hours
 
@@ -101,6 +113,11 @@ def main():
 
         parsed_html = get_page(url)
         filtered_html = remove_irrelevant_characters(args.type, parsed_html)
+
+        if filtered_html == "":
+            analyze_date += datetime.timedelta(days=1)
+            continue
+
         occupied_hours = get_occupied_hours(filtered_html)
         occupied_days[analyze_date.strftime("%d-%m-%Y")] = occupied_hours
         analyze_date += datetime.timedelta(days=1)
