@@ -77,12 +77,10 @@ def get_fully_occupied_days_and_hours(occupied_days):
     fully_occupied = {}
 
     for day in occupied_days.keys():
-        fully_occupied[day] = []
+        fully_occupied[day] = occupied_days[day][next(iter(occupied_days[day]))]
         for field in occupied_days[day].keys():
-            if fully_occupied[day] == []:
-                fully_occupied[day] = occupied_days[day][field]
-            else:
-                fully_occupied[day] = [hour for hour in fully_occupied[day] if hour in occupied_days[day][field]]
+            # TODO: skip checking the first field since this is the one it is already populated with
+            fully_occupied[day] = [hour for hour in fully_occupied[day] if hour in occupied_days[day][field]]
 
     return fully_occupied
 
@@ -95,10 +93,13 @@ def get_nb_occurrences_fully_occupied(fully_occupied):
     
     return occurrences
 
+def get_nb_days_fully_occupied(fully_occupied):
+    return len([day for day in fully_occupied if len(fully_occupied[day]) > 0])
+
 def main():
     parser = argparse.ArgumentParser(description="Parse the HTML code of the supplied URL")
     parser.add_argument("-d", "--day", required=True, help="The start day to fetch the data from (dd-mm-yyyy)")
-    parser.add_argument('--b', action='store_true', help='If supplied, return the number of occurrences the fields are all fully booked')
+    parser.add_argument('--b', action='store_true', help='If supplied, return the number of occurrences the fields are all fully booked, and over how many days this is spread')
     parser.add_argument('-t', '--type', required=True, help='The court type to fetch results for. Possibilities are: "padel", "t_indoor", "t_outdoor"')
     args = parser.parse_args()
 
@@ -126,7 +127,8 @@ def main():
         fully_occupied_days_and_hours = get_fully_occupied_days_and_hours(occupied_days)
         print(fully_occupied_days_and_hours)
         fully_occupied_occurrences = get_nb_occurrences_fully_occupied(fully_occupied_days_and_hours)
-        print(fully_occupied_occurrences)
+        fully_occupied_days = get_nb_days_fully_occupied(fully_occupied_days_and_hours)
+        print(f"On {fully_occupied_occurrences} timeslots, all fields were occupied, spread over {fully_occupied_days} days")
     else:
         print(occupied_days)
 
