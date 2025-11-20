@@ -2,6 +2,11 @@ import argparse
 import requests
 from bs4 import BeautifulSoup
 import re
+import datetime
+
+def generate_url(day, month, year):
+    # TODO: Add checks for proper arguments
+    return f"https://www.tennisenpadelvlaanderen.be/clubdashboard/reserveer-een-terrein?clubId=1956&planningDay={day}-{month}-{year}&terrainGroupId=9565&ownClub=true&clubCourts%5B0%5D=I&clubCourts%5B1%5D=O#hash_results"
 
 def get_page(url):
     try:
@@ -27,55 +32,43 @@ def get_occupied_hours(filtered_html):
     # TODO: add out-of-range checks
 
     hour = None
-    field1_occupied = False
-    field2_occupied = False
     occupied_hours = {'field1': [], 'field2': []}
 
     for index in range(0, len(filtered_html)):
         if re.fullmatch(r'[0-9]{2}:[0-9]{2}', filtered_html[index]):
             hour = filtered_html[index]
-
-            if field1_occupied:
-                if re.fullmatch(r'[0-9]{2}:[0-9]{2}',filtered_html[index+1]):
-                    occupied_hours["field1"].append(hour)
-
-            if field2_occupied:
-                if re.fullmatch(r'[0-9]{2}:[0-9]{2}',filtered_html[index+1]):
-                    occupied_hours["field2"].append(hour)
-
         if filtered_html[index] == 'bezet':
             field = filtered_html[index-1]
             if field == 'padel 1':
                 occupied_hours["field1"].append(hour)
-                field1_occupied = True
             elif field == 'padel 2':
                 occupied_hours["field2"].append(hour)
-                field2_occupied = True
             else:
                 raise Exception("Where is the field specification?")
         
-        if filtered_html[index] == 'vrij':
-            field = filtered_html[index-1]
-            if field == 'padel 1':
-                field1_occupied = False
-            elif field == 'padel 2':
-                field2_occupied = False
-            else:
-                raise Exception("Where is the field specification?")
-    
     return occupied_hours
 
 def main():
     parser = argparse.ArgumentParser(description="Parse the HTML code of the supplied URL")
-    parser.add_argument("-u", "--url", required=True, help="The URL to retrieve")
+    parser.add_argument("-d", "--day", required=True, help="The start day to fetch the data from (dd-mm-yyyy)")
     args = parser.parse_args()
 
-    url = args.url
+    day = args.day.split(sep="-")
+    analyze_date = datetime.date(int(day[2]), int(day[1]), int(day[0]))
+    today = datetime.date.today()
+    occupied_days = {}
 
-    parsed_html = get_page(url)
-    filtered_html = remove_irrelevant_characters(parsed_html)
-    occupied_hours = get_occupied_hours(filtered_html)
-    print(occupied_hours)
+    while analyze_date <= today:
+        url = generate_url(analyze_date.strftime("%d"), analyze_date.strftime("%m"), analyze_date.strftime("%Y"))
+
+        parsed_html = get_page(url)
+        filtered_html = remove_irrelevant_characters(parsed_html)
+        occupied_hours = get_occupied_hours(filtered_html)
+        occupied_days[analyze_date.strftime("%d-%m-%Y")] = occupied_hours
+        analyze_date += datetime.timedelta(days=1)
+
+    print(occupied_days)
+    return
 
 if __name__ == "__main__":
     main()
