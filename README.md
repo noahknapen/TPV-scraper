@@ -8,6 +8,8 @@ The scraper can be configured to return these results for tennis courts instead 
 
 ## Arguments
 `-d`: The start day to fetch the data from (dd-mm-yyyy)
+
 `--b`: If supplied, return the number of occurrences the fields are all fully booked
+
 `--t`: If supplied, fetch the results for tennis instead of padel
 
