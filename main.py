@@ -7,13 +7,17 @@ import datetime
 # TODO: Do not hardcode the number of fields
 # TODO: Make applicable for tennis courts (add flag that looks for 'padel' or 'tennis')
 
-def generate_url(tennis, day, month, year):
+def generate_url(type, day, month, year):
     # TODO: Add checks for proper arguments
 
-    if tennis:
+    if type == "t_indoor":
         return f"https://www.tennisenpadelvlaanderen.be/clubdashboard/reserveer-een-terrein?clubId=1956&planningDay={day}-{month}-{year}&terrainGroupId=3464&ownClub=true&clubCourts[0]=I&clubCourts[1]=O#hash_results"
-    else:
+    elif type == "t_outdoor":
+        return f"https://www.tennisenpadelvlaanderen.be/clubdashboard/reserveer-een-terrein?clubId=1956&planningDay={day}-{month}-{year}&terrainGroupId=3465&ownClub=true&clubCourts[0]=I&clubCourts[1]=O#hash_results"
+    elif type == "padel":
         return f"https://www.tennisenpadelvlaanderen.be/clubdashboard/reserveer-een-terrein?clubId=1956&planningDay={day}-{month}-{year}&terrainGroupId=9565&ownClub=true&clubCourts%5B0%5D=I&clubCourts%5B1%5D=O#hash_results"
+    else:
+        raise Exception("Invalid court type was supplied")
 
 def get_page(url):
     try:
@@ -83,7 +87,7 @@ def main():
     parser = argparse.ArgumentParser(description="Parse the HTML code of the supplied URL")
     parser.add_argument("-d", "--day", required=True, help="The start day to fetch the data from (dd-mm-yyyy)")
     parser.add_argument('--b', action='store_true', help='If supplied, return the number of occurrences the fields are all fully booked')
-    parser.add_argument('--t', action='store_true', help='If supplied, fetch the results for tennis instead of padel')
+    parser.add_argument('-t', '--type', required=True, help='The court type to fetch results for. Possibilities are: "padel", "t_indoor", "t_outdoor"')
     args = parser.parse_args()
 
     day = args.day.split(sep="-")
@@ -93,10 +97,10 @@ def main():
 
     while analyze_date <= today:
         print(f"Analyzing {analyze_date}")
-        url = generate_url(args.t, analyze_date.strftime("%d"), analyze_date.strftime("%m"), analyze_date.strftime("%Y"))
+        url = generate_url(args.type, analyze_date.strftime("%d"), analyze_date.strftime("%m"), analyze_date.strftime("%Y"))
 
         parsed_html = get_page(url)
-        filtered_html = remove_irrelevant_characters(args.t, parsed_html)
+        filtered_html = remove_irrelevant_characters(args.type, parsed_html)
         occupied_hours = get_occupied_hours(filtered_html)
         occupied_days[analyze_date.strftime("%d-%m-%Y")] = occupied_hours
         analyze_date += datetime.timedelta(days=1)
