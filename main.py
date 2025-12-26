@@ -4,9 +4,6 @@ from bs4 import BeautifulSoup
 import re
 import datetime
 
-# TODO: Do not hardcode the number of fields
-# TODO: Make applicable for tennis courts (add flag that looks for 'padel' or 'tennis')
-
 def generate_url(type, day, month, year):
     # TODO: Add checks for proper arguments
 
